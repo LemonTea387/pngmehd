@@ -1,3 +1,5 @@
+use std::io::{BufReader, Read};
+
 use crate::chunk_type::ChunkType;
 use crate::Error;
 
@@ -49,14 +51,81 @@ impl Chunk {
 impl TryFrom<&[u8]> for Chunk {
     type Error = Error;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        
-        todo!()
+        let mut reader = BufReader::new(value);
+        // 4-byte buffer for temp reading
+        let mut buf: [u8; 4] = [0; 4];
+
+        // Length of chunk
+        reader.read_exact(&mut buf)?;
+        let length = usize::try_from(u32::from_be_bytes(buf))?;
+
+        // ChunkType
+        reader.read_exact(&mut buf)?;
+        let chunk_type: ChunkType = ChunkType::try_from(buf)?;
+
+        // Prepare chunk_data vec and read
+
+        let mut chunk_data: Vec<u8> = vec![0; length];
+        reader.read_exact(&mut chunk_data)?;
+        if chunk_data.len() != length {
+            return Err(Box::new(ChunkError::LengthError(length, chunk_data.len())));
+        }
+
+        let new_chunk = Chunk {
+            chunk_type,
+            chunk_data,
+        };
+
+        // Read and check crc
+        reader.read_exact(&mut buf)?;
+        let crc_provided = u32::from_be_bytes(buf);
+        let crc_computed = new_chunk.crc();
+
+        if crc_provided != crc_computed {
+            return Err(Box::new(ChunkError::CrcMismatchError(
+                crc_provided,
+                crc_computed,
+            )));
+        }
+
+        Ok(new_chunk)
     }
 }
 
 impl std::fmt::Display for Chunk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Chunk Type : {}\nData : {}", self.chunk_type(), self.data_as_string().unwrap_or_else(|_| "[data]".to_string()))
+        write!(
+            f,
+            "Chunk Type : {}\nData : {}",
+            self.chunk_type(),
+            self.data_as_string()
+                .unwrap_or_else(|_| "[data]".to_string())
+        )
+    }
+}
+
+#[derive(Debug)]
+enum ChunkError {
+    LengthError(usize, usize),
+    CrcMismatchError(u32, u32),
+}
+
+impl std::error::Error for ChunkError {}
+
+impl std::fmt::Display for ChunkError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ChunkError::LengthError(expected, got) => {
+                write!(
+                    f,
+                    "Length Error! Expected {} bytes, Got {} bytes",
+                    expected, got
+                )
+            }
+            ChunkError::CrcMismatchError(expected, got) => {
+                write!(f, "CRC Mismatch Error! Expected {}, Got {}", expected, got)
+            }
+        }
     }
 }
 

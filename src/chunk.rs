@@ -31,8 +31,7 @@ impl Chunk {
             .chain(self.chunk_data.iter())
             .copied()
             .collect();
-        let crc: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_CKSUM);
-        crc.checksum(bytez.as_ref())
+        crc::crc32::checksum_ieee(&bytez)
     }
 
     fn data_as_string(&self) -> Result<String, Error> {

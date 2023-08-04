@@ -55,7 +55,9 @@ impl ChunkType {
     fn is_valid_characters(&self) -> bool {
         self.bytez
             .iter()
-            .all(|&b| (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z'))
+            // .all(|&b| (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z'))
+            // .all(|&b| (b'a'..=b'z').contains(&b) || (b'A'..=b'Z').contains(&b))
+            .all(|&b| b.is_ascii_alphabetic())
     }
 }
 
@@ -71,10 +73,10 @@ impl TryFrom<[u8; 4]> for ChunkType {
     type Error = Error;
 
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
-        let chunk_type = ChunkType{bytez:value};
+        let chunk_type = ChunkType { bytez: value };
         match chunk_type.is_valid() {
             true => Ok(chunk_type),
-            false => Err(Box::new(ChunkTypeError::InvalidBytesError))
+            false => Err(Box::new(ChunkTypeError::InvalidBytesError)),
         }
     }
 }

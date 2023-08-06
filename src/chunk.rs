@@ -1,15 +1,16 @@
+#![allow(unused_variables)]
 use std::io::{BufReader, Read};
 
 use crate::chunk_type::ChunkType;
 use crate::Error;
 
-struct Chunk {
+pub struct Chunk {
     chunk_type: ChunkType,
     chunk_data: Vec<u8>,
 }
 
 impl Chunk {
-    fn new(chunk_type: ChunkType, chunk_data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, chunk_data: Vec<u8>) -> Chunk {
         Chunk {
             chunk_type,
             chunk_data
@@ -19,7 +20,7 @@ impl Chunk {
     fn length(&self) -> u32 {
         self.chunk_data.len() as u32
     }
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
     fn data(&self) -> &[u8] {
@@ -36,14 +37,14 @@ impl Chunk {
         crc::crc32::checksum_ieee(&bytez)
     }
 
-    fn data_as_string(&self) -> Result<String, Error> {
+    pub fn data_as_string(&self) -> Result<String, Error> {
         // match String::from_utf8(self.chunk_data.clone()) {
         //     Ok(v) => Ok(v),
         //     Err(e) => Err(Box::new(ChunkError::InvalidStringError))
         // }
         Ok(String::from_utf8(self.chunk_data.clone()).map_err(Box::new)?)
     }
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         self.chunk_data.clone()
     }
 }

@@ -55,8 +55,6 @@ impl ChunkType {
     fn is_valid_characters(&self) -> bool {
         self.bytez
             .iter()
-            // .all(|&b| (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z'))
-            // .all(|&b| (b'a'..=b'z').contains(&b) || (b'A'..=b'Z').contains(&b))
             .all(|&b| b.is_ascii_alphabetic())
     }
 }

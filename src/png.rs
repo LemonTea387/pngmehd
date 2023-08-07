@@ -1,32 +1,53 @@
-#![allow(unused_variables)]
-
 use crate::chunk::Chunk;
 use crate::Error;
-pub struct Png {}
+pub struct Png {
+    chunks: Vec<Chunk>,
+}
 
 impl Png {
     const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+    pub fn new() -> Self {
+        Png { chunks: Vec::new() }
+    }
     pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
-        todo!()
+        Png { chunks }
     }
 
     fn append_chunk(&mut self, chunk: Chunk) {
-        todo!()
+        self.chunks.push(chunk)
     }
     fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, Error> {
-        todo!()
+        if let Some(ind) = self
+            .chunks
+            .iter()
+            .position(|chunk| chunk.to_string() == chunk_type)
+        {
+            Ok(self.chunks.remove(ind))
+        } else {
+            Err(Box::new(PngError::UnknownChunkType))
+        }
     }
     fn header(&self) -> &[u8; 8] {
-        todo!()
+        &Png::STANDARD_HEADER
     }
     fn chunks(&self) -> &[Chunk] {
-        todo!()
+        &self.chunks
     }
     fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        todo!()
+        self.chunks
+            .iter()
+            .find(|&chunk| chunk.to_string() == chunk_type)
     }
     fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        self.header()
+            .iter()
+            .copied()
+            .chain(
+                self.chunks
+                    .iter()
+                    .flat_map(|chunk| chunk.as_bytes().into_iter()),
+            )
+            .collect::<Vec<_>>()
     }
 }
 
@@ -34,13 +55,33 @@ impl TryFrom<&[u8]> for Png {
     type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        todo!()
+        // TODO 
+        let new_png = Png::new();
+
+        
+
+        Ok(new_png)
     }
 }
 
 impl std::fmt::Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         todo!()
+    }
+}
+
+#[derive(Debug)]
+enum PngError {
+    UnknownChunkType,
+}
+
+impl std::error::Error for PngError {}
+
+impl std::fmt::Display for PngError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PngError::UnknownChunkType => write!(f, "Chunk type not found!"),
+        }
     }
 }
 

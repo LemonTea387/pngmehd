@@ -1,3 +1,5 @@
+use std::io::{BufReader, Read};
+
 use crate::chunk::Chunk;
 use crate::Error;
 pub struct Png {
@@ -20,7 +22,7 @@ impl Png {
         if let Some(ind) = self
             .chunks
             .iter()
-            .position(|chunk| chunk.to_string() == chunk_type)
+            .position(|chunk| chunk.chunk_type().to_string() == chunk_type)
         {
             Ok(self.chunks.remove(ind))
         } else {
@@ -36,7 +38,7 @@ impl Png {
     fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         self.chunks
             .iter()
-            .find(|&chunk| chunk.to_string() == chunk_type)
+            .find(|&chunk| chunk.chunk_type().to_string() == chunk_type)
     }
     fn as_bytes(&self) -> Vec<u8> {
         self.header()
@@ -55,23 +57,40 @@ impl TryFrom<&[u8]> for Png {
     type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        // TODO 
-        let new_png = Png::new();
+        // Header
+        let header = &value[..Png::STANDARD_HEADER.len()];
+        if Png::STANDARD_HEADER != header {
+            return Err(Box::new(PngError::InvalidHeader));
+        }
 
-        
+        // We finished reading the header, now what's left are the chunks
+        // TODO: there's got to be a nicer way than advancing a pointer and reslicing each time
+        let mut index = Png::STANDARD_HEADER.len();
 
-        Ok(new_png)
+        // parse one chunk at a time
+        let mut chunks = Vec::new();
+
+        while index < value.len() {
+            println!("Index is at {index}");
+            let bytes = &value[index..];
+            let chunk = Chunk::try_from(bytes)?;
+            index += chunk.length() as usize + Chunk::METADATA_BYTES;
+
+            chunks.push(chunk);
+        }
+        Ok(Png { chunks })
     }
 }
 
 impl std::fmt::Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        write!(f, "")
     }
 }
 
 #[derive(Debug)]
 enum PngError {
+    InvalidHeader,
     UnknownChunkType,
 }
 
@@ -81,6 +100,7 @@ impl std::fmt::Display for PngError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             PngError::UnknownChunkType => write!(f, "Chunk type not found!"),
+            PngError::InvalidHeader => write!(f, "Invalid Header bytes!"),
         }
     }
 }
@@ -241,7 +261,6 @@ mod tests {
             .chain(chunk_bytes.iter())
             .copied()
             .collect();
-
         let png: Png = TryFrom::try_from(bytes.as_ref()).unwrap();
 
         let _png_string = format!("{}", png);

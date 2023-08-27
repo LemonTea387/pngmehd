@@ -49,6 +49,10 @@ impl ChunkType {
     }
 
     fn is_valid(&self) -> bool {
+        let validChars = self.is_valid_characters(); 
+        let validBit = self.is_reserved_bit_valid();
+        println!("Is valid chars {validChars}, validBit {validBit}");
+        
         self.is_valid_characters() && self.is_reserved_bit_valid()
     }
 

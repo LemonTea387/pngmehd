@@ -10,14 +10,15 @@ pub struct Chunk {
 }
 
 impl Chunk {
+    pub const METADATA_BYTES: usize = 12;
     pub fn new(chunk_type: ChunkType, chunk_data: Vec<u8>) -> Chunk {
         Chunk {
             chunk_type,
-            chunk_data
+            chunk_data,
         }
     }
 
-    fn length(&self) -> u32 {
+    pub fn length(&self) -> u32 {
         self.chunk_data.len() as u32
     }
     pub fn chunk_type(&self) -> &ChunkType {
@@ -45,7 +46,14 @@ impl Chunk {
         Ok(String::from_utf8(self.chunk_data.clone()).map_err(Box::new)?)
     }
     pub fn as_bytes(&self) -> Vec<u8> {
-        self.chunk_data.clone()
+        self.length()
+            .to_be_bytes()
+            .iter()
+            .chain(self.chunk_type().bytes().iter())
+            .chain(self.data().iter())
+            .chain(self.crc().to_be_bytes().iter())
+            .copied()
+            .collect()
     }
 }
 
